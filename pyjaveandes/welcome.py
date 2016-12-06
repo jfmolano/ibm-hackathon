@@ -118,10 +118,10 @@ def get_tweets(word):
                   "\"$gt\": null" + \
                 "}," + \
                 "\"text\": {" + \
-                  "\"$regex\": \".* MinSaludCol .*\"" + \
+                  "\"$regex\": \".* "+word+" .*\"" + \
                 "}" + \
               "}," + \
-              "\"limit\":50"+ \
+              "\"limit\":60"+ \
             "}"
 
     print data
@@ -136,17 +136,17 @@ def get_tweets(word):
     l_tweets = ast.literal_eval(response.text)["docs"]
     l_resp = []
     for tweet in l_tweets:
-        text = tweet["text"]
+        original_text = tweet["text"]
         #print text
-        text = text.replace("#","").replace("@","").replace("://","").replace("/","")
+        text = original_text.replace("#","").replace("@","").replace("://","").replace("/","")
         #print text
         #print alchemy_language.targeted_sentiment(text=text,targets=['eps'], language='spanish')["results"][0]["sentiment"]
-        sentiment = alchemy_language.targeted_sentiment(text=text,targets=['MinSaludCol'], language='spanish')["results"][0]["sentiment"]
+        sentiment = alchemy_language.targeted_sentiment(text=text,targets=[word], language='spanish')["results"][0]["sentiment"]
         score = 0
         if "score" in sentiment:
             score = sentiment["score"]
         sentiment = sentiment["type"]
-        l_resp.append({"sentiment":sentiment,"text":text,"score":score})
+        l_resp.append({"sentiment":sentiment,"text":original_text,"score":score})
         #print l_resp
     return jsonify(result=l_resp)
 
