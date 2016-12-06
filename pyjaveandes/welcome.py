@@ -14,9 +14,11 @@
 import ibm_db
 import os
 import watson_developer_cloud
+import couchdb
 from flask import Flask, jsonify
 import json
 from flask_cors import CORS, cross_origin
+import requests
 
 with open('conf.json', 'r') as f:
     try:
@@ -47,6 +49,17 @@ dsn = (
     "PWD={4};").format(dsn_database, dsn_hostname, dsn_port, dsn_uid, dsn_pwd)
 
 conn = ibm_db.connect(dsn, "", "")
+
+conn = ibm_db.connect(dsn, "", "")
+
+cloudant_user = conf["cloudant_user"]
+cloudant_pass = conf["cloudant_pass"]
+
+couch = couchdb.Server("https://%s.cloudant.com" % cloudant_user)
+couch.resource.credentials = (cloudant_user, cloudant_pass)
+
+# accessing a database
+db = couch['tweets_s']
 
 @app.route('/')
 def Welcome():
@@ -88,6 +101,32 @@ def SayHello(name):
         'message': 'Hello ' + name
     }
     return jsonify(results=message)
+
+@app.route('/get_tweets/<word>')
+def get_tweets(word):
+    url = "http://"+cloudant_user+".cloudant.com/tweets_s/_find"
+
+    data = "{" + \
+              "\"selector\": {" + \
+                "\"_id\": {" + \
+                  "\"$gt\": null" + \
+                "}," + \
+                "\"text\": {" + \
+                  "\"$regex\": \".*el.*\"" + \
+                "}" + \
+              "}" + \
+            "}"
+
+    print data
+
+    headers = {
+        'Content-Type': "application/json"
+        }
+
+    response = requests.request("POST", url, data=data, headers=headers, auth=(cloudant_user, cloudant_pass))
+
+    print response.text
+    return jsonify(results={"a":"a"})
 
 port = os.getenv('PORT', '5000')
 if __name__ == "__main__":

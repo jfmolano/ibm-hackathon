@@ -37,25 +37,22 @@ couch = couchdb.Server("https://%s.cloudant.com" % cloudant_user)
 couch.resource.credentials = (cloudant_user, cloudant_pass)
 
 # accessing a database
-db = couch['tweets']
+db = couch['tweets_s']
 # or, creating one
 #db = couch.create('prueba')
 
 # accessing a document
 #doc = db[DOCUMENT_ID]
 # or, creating one
-db.save({
-  'name': 'jfmolano1587',
-  'title': 'Fun Captain',
-  'superpower': 'More fun than a hallucinogenic trampoline'
-})
 
 query = "SELECT * FROM MINSA_TWEETS;"
     # run direct SQL
 stmt = ibm_db.exec_immediate(conn, query)
 tuple_db = ibm_db.fetch_tuple(stmt)
 while tuple_db != False:
-    print "Tweet text : ", tuple_db[1]
+    db.save({
+      'text': tuple_db[1]
+    })
     tuple_db = ibm_db.fetch_tuple(stmt)
 #doc = db[doc_id]
 
