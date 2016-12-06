@@ -15,6 +15,7 @@ import ibm_db
 import os
 import watson_developer_cloud
 import couchdb
+import ast
 from flask import Flask, jsonify
 import json
 from flask_cors import CORS, cross_origin
@@ -57,8 +58,8 @@ conn = ibm_db.connect(dsn, "", "")
 
 cloudant_user = conf["cloudant_user"]
 cloudant_pass = conf["cloudant_pass"]
-#alchemy_key = conf["alchemy_key"]
-#alchemy_language = AlchemyLanguageV1(api_key=alchemy_key)
+alchemy_key = conf["alchemy_key"]
+alchemy_language = AlchemyLanguageV1(api_key=alchemy_key)
 
 couch = couchdb.Server("https://%s.cloudant.com" % cloudant_user)
 couch.resource.credentials = (cloudant_user, cloudant_pass)
@@ -117,10 +118,10 @@ def get_tweets(word):
                   "\"$gt\": null" + \
                 "}," + \
                 "\"text\": {" + \
-                  "\"$regex\": \".*eps.*\"" + \
+                  "\"$regex\": \".* MinSaludCol .*\"" + \
                 "}" + \
               "}," + \
-              "\"limit\":20"+ \
+              "\"limit\":50"+ \
             "}"
 
     print data
@@ -130,15 +131,24 @@ def get_tweets(word):
         }
 
     response = requests.request("POST", url, data=data, headers=headers, auth=(cloudant_user, cloudant_pass))
-    print response.text
-    #l_tweets = json.dumps(response.text)
-    #l_resp = []
-    #for tweet in l_tweets:
-        #text = tweet["text"]
+    #print response.text
+    #print ast.literal_eval(response.text)["docs"]
+    l_tweets = ast.literal_eval(response.text)["docs"]
+    l_resp = []
+    for tweet in l_tweets:
+        text = tweet["text"]
         #print text
-        #print(json.dumps(alchemy_language.targeted_sentiment(text=text,targets=['eps'], language='spanish'), indent=2))
-
-    return jsonify(results={"a":"a"})
+        text = text.replace("#","").replace("@","").replace("://","").replace("/","")
+        #print text
+        #print alchemy_language.targeted_sentiment(text=text,targets=['eps'], language='spanish')["results"][0]["sentiment"]
+        sentiment = alchemy_language.targeted_sentiment(text=text,targets=['MinSaludCol'], language='spanish')["results"][0]["sentiment"]
+        score = 0
+        if "score" in sentiment:
+            score = sentiment["score"]
+        sentiment = sentiment["type"]
+        l_resp.append({"sentiment":sentiment,"text":text,"score":score})
+        #print l_resp
+    return jsonify(result=l_resp)
 
 port = os.getenv('PORT', '5000')
 if __name__ == "__main__":
