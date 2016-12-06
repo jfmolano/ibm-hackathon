@@ -16,6 +16,7 @@ import os
 import watson_developer_cloud
 from flask import Flask, jsonify
 import json
+from flask_cors import CORS, cross_origin
 
 with open('conf.json', 'r') as f:
     try:
@@ -34,6 +35,7 @@ dsn_port = "50000"                # e.g. "50000"
 dsn_protocol = "TCPIP"            # i.e. "TCPIP"
 
 app = Flask(__name__)
+CORS(app)
 
 dsn = (
     "DRIVER={{IBM DB2 ODBC DRIVER}};"
@@ -71,6 +73,14 @@ def GetPeople():
         {'name': 'Bill', 'val': 26}
     ]
     return jsonify(results=list)
+
+@app.route('/test_rest', methods=['GET'])
+def test_rest():
+    query = "SELECT * FROM EMPLEADOS;"
+    # run direct SQL
+    stmt = ibm_db.exec_immediate(conn, query)
+    l = ibm_db.fetch_both(stmt)
+    return jsonify(l)
 
 @app.route('/api/people/<name>')
 def SayHello(name):
