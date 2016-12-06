@@ -16,7 +16,7 @@ import os
 import watson_developer_cloud
 import couchdb
 import ast
-from flask import Flask, jsonify
+from flask import Flask, jsonify, abort, make_response, request
 import json
 from flask_cors import CORS, cross_origin
 import requests
@@ -108,8 +108,11 @@ def SayHello(name):
     }
     return jsonify(results=message)
 
-@app.route('/get_tweets/<word>')
-def get_tweets(word):
+@app.route('/get_tweets', methods=['POST'])
+def get_tweets():
+    print request.json
+    word = request.json["word"]
+    print word
     url = "http://"+cloudant_user+".cloudant.com/tweets_s/_find"
 
     data = "{" + \
@@ -138,7 +141,7 @@ def get_tweets(word):
     for tweet in l_tweets:
         original_text = tweet["text"]
         #print text
-        text = original_text.replace("#","").replace("@","").replace("://","").replace("/","")
+        text = original_text.replace("#","").replace("@","").replace("://","").replace("/","").replace("\"","")
         #print text
         #print alchemy_language.targeted_sentiment(text=text,targets=['eps'], language='spanish')["results"][0]["sentiment"]
         sentiment = alchemy_language.targeted_sentiment(text=text,targets=[word], language='spanish')["results"][0]["sentiment"]
