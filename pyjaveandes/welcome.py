@@ -19,6 +19,9 @@ from flask import Flask, jsonify
 import json
 from flask_cors import CORS, cross_origin
 import requests
+from watson_developer_cloud import AlchemyLanguageV1
+
+url = 'https://developer.ibm.com/watson/blog/2015/11/03/price-reduction-for-watson-personality-insights/'
 
 with open('conf.json', 'r') as f:
     try:
@@ -54,6 +57,8 @@ conn = ibm_db.connect(dsn, "", "")
 
 cloudant_user = conf["cloudant_user"]
 cloudant_pass = conf["cloudant_pass"]
+#alchemy_key = conf["alchemy_key"]
+#alchemy_language = AlchemyLanguageV1(api_key=alchemy_key)
 
 couch = couchdb.Server("https://%s.cloudant.com" % cloudant_user)
 couch.resource.credentials = (cloudant_user, cloudant_pass)
@@ -112,9 +117,10 @@ def get_tweets(word):
                   "\"$gt\": null" + \
                 "}," + \
                 "\"text\": {" + \
-                  "\"$regex\": \".*el.*\"" + \
+                  "\"$regex\": \".*eps.*\"" + \
                 "}" + \
-              "}" + \
+              "}," + \
+              "\"limit\":20"+ \
             "}"
 
     print data
@@ -124,8 +130,14 @@ def get_tweets(word):
         }
 
     response = requests.request("POST", url, data=data, headers=headers, auth=(cloudant_user, cloudant_pass))
-
     print response.text
+    #l_tweets = json.dumps(response.text)
+    #l_resp = []
+    #for tweet in l_tweets:
+        #text = tweet["text"]
+        #print text
+        #print(json.dumps(alchemy_language.targeted_sentiment(text=text,targets=['eps'], language='spanish'), indent=2))
+
     return jsonify(results={"a":"a"})
 
 port = os.getenv('PORT', '5000')
